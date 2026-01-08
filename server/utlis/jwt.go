@@ -4,10 +4,14 @@ import (
 	"time"
 	"os"
 	"github.com/golang-jwt/jwt/v5"
-	"fmt"
+
+	"golang.org/x/crypto/bcrypt"
+
 )
 
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+var accessSecretKey = []byte(os.Getenv("ACCESS_SECRET_KEY"))
+var refreshSecretKey = []byte(os.Getenv("REFRESH_SECRET_KEY"))
+
 
 var accessSecret  = []byte(os.Getenv("ACCESS_SECRET"))
 var refreshSecret = []byte(os.Getenv("REFRESH_SECRET"))
@@ -31,44 +35,99 @@ func GenerateTokens(userID int) (access, refresh string, err error) {
 
 	refresh, err = generateToken(userID, "refresh", 7*24*time.Hour, refreshSecret)
 	return
+=======
+type Claims struct {
+	UserID string `json:"user_id"`
+	Email  string `json:"email"`
+	Role   string `json:"role"`
+
+	jwt.RegisteredClaims
 }
 
-type TokenPayload struct {
-	UserID int
-	Type   string
+func GenerateTokens(email, userID, userType string) (string, string, error) {
+    tokenExpiry := time.Now().Add(24 * time.Hour).Unix()
+    refreshTokenExpiry := time.Now().Add(7 * 24 * time.Hour).Unix()
+	
+    claims := &Claims{
+        Email:  email,
+        UserID: userID,
+        Role:   userType,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(time.Unix(tokenExpiry, 0)),
+        },
+    }
+
+    refreshClaims := &Claims{
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(time.Unix(refreshTokenExpiry, 0)),
+        },
+    }
+
+    accessTokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    signedAccessToken, err := accessTokenObj.SignedString(accessSecretKey)
+    if err != nil {
+        return "", "", err
+    }
+
+    
+    refreshTokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+    signedRefreshToken, err := refreshTokenObj.SignedString(refreshSecretKey)
+    if err != nil {
+        return "", "", err
+    }
+
+    return signedAccessToken, signedRefreshToken, nil
 }
 
-func ValidateToken(tokenStr string, secret []byte, expectedType string) (*TokenPayload, error) {
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+func ValidateAccessToken(tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, jwt.ErrSignatureInvalid
 		}
-		return secret, nil
+		return accessSecretKey, nil
 	})
 
-	if err != nil || !token.Valid {
-		return nil, fmt.Errorf("invalid token")
+	if err != nil {
+		return nil, err
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, fmt.Errorf("invalid claims")
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
 	}
 
-	// check exp
-	expireTime, err := claims.GetExpirationTime()
-	if err == nil || time.Now().After(expireTime.Time) {
-		return nil, fmt.Errorf("token expired")
-	}
-	// check type
-	if claims["type"] != expectedType {
-		return nil, fmt.Errorf("wrong token type")
-	}
-
-	userID := int(claims["sub"].(float64))
-
-	return &TokenPayload{
-		UserID: userID,
-		Type:   claims["type"].(string),
-	}, nil
+	return nil, jwt.ErrSignatureInvalid
 }
+
+func ValidateRefreshToken(tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return refreshSecretKey, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, jwt.ErrSignatureInvalid
+}
+
+func HashPassword(password *string) *string {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
+	if err != nil {
+		panic(err)
+	}
+	hashedPwd := string(bytes)
+	return &hashedPwd
+} 
+
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
