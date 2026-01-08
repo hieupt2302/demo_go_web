@@ -9,7 +9,6 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
     return func(c *gin.Context) {
-        // 1. Lấy Header Authorization
         authHeader := c.GetHeader("Authorization")
         if authHeader == "" {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "Yêu cầu cung cấp mã xác thực"})
@@ -38,4 +37,3 @@ func AuthMiddleware() gin.HandlerFunc {
         c.Next()
     }
 }
-

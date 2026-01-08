@@ -11,4 +11,5 @@ type CartItem struct {
 	UpdatedAt time.Time
 	isDeleted bool   `gorm:"default:false" json:"is_deleted"`
 	Cart []Cart `gorm:"foreignKey:CartItemID" json:"carts,omitempty"`
+
 }

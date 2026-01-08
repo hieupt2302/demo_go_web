@@ -4,17 +4,11 @@ import (
 	"time"
 	"os"
 	"github.com/golang-jwt/jwt/v5"
-
 	"golang.org/x/crypto/bcrypt"
-
 )
 
 var accessSecretKey = []byte(os.Getenv("ACCESS_SECRET_KEY"))
 var refreshSecretKey = []byte(os.Getenv("REFRESH_SECRET_KEY"))
-
-
-var accessSecret  = []byte(os.Getenv("ACCESS_SECRET"))
-var refreshSecret = []byte(os.Getenv("REFRESH_SECRET"))
 
 
 type Claims struct {
@@ -98,13 +92,13 @@ func ValidateRefreshToken(tokenString string) (*Claims, error) {
 	return nil, jwt.ErrSignatureInvalid
 }
 
-func HashPassword(password *string) *string {
+func HashPassword(password *string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
 	if err != nil {
 		panic(err)
 	}
 	hashedPwd := string(bytes)
-	return &hashedPwd
+	return hashedPwd
 } 
 
 func CheckPasswordHash(password, hash string) bool {
