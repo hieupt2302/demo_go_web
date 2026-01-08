@@ -23,6 +23,6 @@ func ConnectDatabase() {
 		log.Fatal("Failed to connect to database: ", err)
 	}
 	DB = database
-	DB.AutoMigrate(&models.User{})
+	DB.AutoMigrate(&models.User{}, &models.Book{}, &models.CartItem{}, &models.Cart{})
 	log.Println("✅ Database connected!")
 }

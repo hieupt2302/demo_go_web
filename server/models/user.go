@@ -1,15 +1,18 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
-	ID        uint   `gorm:"primaryKey" json:"id"`
-	Name      string `gorm:"type:varchar(100);not null" json:"name"`
-	Email     string `gorm:"type:varchar(100);not null;uniqueIndex" json:"email"`
-	Password  string `gorm:"type:varchar(255);not null" json:"password"`
-	PhoneNumber string  `json:"phone_number"`
-	Role 	string `gorm:"type:varchar(50)" json:"role"`
+	ID          int   `gorm:"primaryKey" json:"id"`
+	Email       string `gorm:"type:varchar(255);not null;unique" json:"email"`
+	Password    string `gorm:"not null" json:"-"`
+	PhoneNumber int    `json:"phone_number"`
+	Role        string `gorm:"type:varchar(50)" json:"role"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	isDeleted bool `gorm:"default:false" json:"is_deleted"`
+	CartItem []CartItem `gorm:"many2many:carts;" json:"cart_items,omitempty"`
 }
+

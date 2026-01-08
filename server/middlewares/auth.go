@@ -3,7 +3,6 @@ package middlewares
 import (
     "strings"
     "net/http"
-
     "demowebgo/utlis" 
     "github.com/gin-gonic/gin"
 )
@@ -18,7 +17,6 @@ func AuthMiddleware() gin.HandlerFunc {
             return
         }
 
-        // 2. Kiểm tra định dạng "Bearer <token>"
         parts := strings.Split(authHeader, " ")
         if len(parts) != 2 || parts[0] != "Bearer" {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "Định dạng xác thực không hợp lệ"})
@@ -26,7 +24,6 @@ func AuthMiddleware() gin.HandlerFunc {
             return
         }
 
-        // 3. Gọi hàm ValidateAccessToken (Dùng đúng hàm cho Access Token)
         claims, err := utils.ValidateAccessToken(parts[1])
         if err != nil {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "Token không hợp lệ hoặc đã hết hạn"})
@@ -41,3 +38,4 @@ func AuthMiddleware() gin.HandlerFunc {
         c.Next()
     }
 }
+
