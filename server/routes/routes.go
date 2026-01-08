@@ -6,8 +6,8 @@ import (
 )
 
 func SetupRoutes(router *gin.Engine) {
-	userRoute := router.Group("/user")
-	handle_routes.UserRoutes(userRoute)
 	authRoute := router.Group("/auth")
 	handle_routes.AuthRoutes(authRoute)
+	userRoute := router.Group("/user")
+	handle_routes.UserRoutes(userRoute)
 }

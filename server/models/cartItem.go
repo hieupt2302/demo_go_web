@@ -1,0 +1,14 @@
+package models
+
+import "time"
+
+type CartItem struct {
+	ID        int `gorm:"primaryKey" json:"id"`
+	BookID    int
+	Book      Book
+	Quantity  int `gorm:"not null" json:"quantity"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	IsDeleted bool   `gorm:"default:false" json:"is_deleted"`
+	User      []User `gorm:"many2many:carts;" json:"users,omitempty"`
+}

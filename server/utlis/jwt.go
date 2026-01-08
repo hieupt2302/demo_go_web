@@ -5,10 +5,12 @@ import (
 	"os"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+
 )
 
 var accessSecretKey = []byte(os.Getenv("ACCESS_SECRET_KEY"))
 var refreshSecretKey = []byte(os.Getenv("REFRESH_SECRET_KEY"))
+
 
 type Claims struct {
 	UserID string `json:"user_id"`
@@ -104,3 +106,4 @@ func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
+
