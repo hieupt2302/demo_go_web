@@ -10,5 +10,5 @@ type CartItem struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	isDeleted bool   `gorm:"default:false" json:"is_deleted"`
-	User      []User `gorm:"many2many:carts;" json:"users,omitempty"`
+	Cart []Cart `gorm:"foreignKey:CartItemID" json:"carts,omitempty"`
 }

@@ -11,4 +11,6 @@ func SetupRoutes(router *gin.Engine) {
 	handle_routes.UserRoutes(userRoute)
 	authRoute := router.Group("/auth")
 	handle_routes.AuthRoutes(authRoute)
+	bookRoute := router.Group("/book")
+	handle_routes.BookRoutes(bookRoute)
 }

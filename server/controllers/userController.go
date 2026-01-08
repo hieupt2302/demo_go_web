@@ -1,8 +1,10 @@
 package controllers
+
 import (
-	"github.com/gin-gonic/gin"
-	"demowebgo/models"
 	"demowebgo/config"
+	"demowebgo/models"
+
+	"github.com/gin-gonic/gin"
 )
 
 func CreateUser(c *gin.Context) {
@@ -18,10 +20,24 @@ func CreateUser(c *gin.Context) {
 	c.JSON(201, user)
 }
 
+//	func GetUserByID(c *gin.Context) {
+//		var user models.User
+//		id := c.Param("id")
+//		if err := config.DB.First(&user, id).Error; err != nil {
+//			c.JSON(404, gin.H{"error": "User not found"})
+//			return
+//		}
+//		c.JSON(200, user)
+//	}
 func GetUserByID(c *gin.Context) {
 	var user models.User
 	id := c.Param("id")
-	if err := config.DB.First(&user, id).Error; err != nil {
+
+	if err := config.DB.
+		Preload("Cart").
+		Where("id = ? AND is_deleted = ?", id, false).
+		First(&user).Error; err != nil {
+
 		c.JSON(404, gin.H{"error": "User not found"})
 		return
 	}
@@ -41,7 +57,7 @@ func UpdateUser(c *gin.Context) {
 	if err := config.DB.Save(&user).Error; err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
-	}	
+	}
 	c.JSON(200, user)
 }
 
