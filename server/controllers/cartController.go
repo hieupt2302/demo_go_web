@@ -33,8 +33,8 @@ func AddToCart(c *gin.Context) {
     }
 
     cartLink := models.Cart{
-        UserID:     uint(userID),
-        CartItemID: uint(cartItem.ID),
+        UserID:     int(userID),
+        CartItemID: int(cartItem.ID),
     }
 
     if err := config.DB.Create(&cartLink).Error; err != nil {
@@ -57,6 +57,6 @@ func GetCart(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{
-        "cart": user.CartItem,
+        "cart": user.Cart,
     })
 }

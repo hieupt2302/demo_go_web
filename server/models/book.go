@@ -9,4 +9,5 @@ type Book struct {
 	Price    float64 `gorm:"not null" json:"price"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	IsDeleted bool   `gorm:"default:false" json:"is_deleted"`
 }
