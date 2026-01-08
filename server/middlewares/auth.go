@@ -6,7 +6,7 @@ import (
 	"demowebgo/utlis"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
+	
 )
 
 func AuthMiddleware() gin.HandlerFunc {
@@ -26,14 +26,14 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		token, err := utils.ValidateToken(parts[1])
-		if err != nil || !token.Valid {
+		if err != nil {
 			c.JSON(401, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
 			return
 		}
 
-		claims := token.Claims.(jwt.MapClaims)
-		c.Set("user_id", uint(claims["user_id"].(float64)))
+		claims := token.UserID
+		c.Set("user_id", claims)
 
 		c.Next()
 	}
