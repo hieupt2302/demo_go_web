@@ -10,6 +10,11 @@ var TestDB *gorm.DB
 
 func SetupTestDB() {
 	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(
+		&models.User{},
+		&models.Book{},
+		&models.CartItem{},
+		&models.Cart{},
+	)
 	TestDB = db
 }
