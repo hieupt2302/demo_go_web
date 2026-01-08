@@ -59,7 +59,7 @@ func Register(c *gin.Context) {
 	hashedPassword := utils.HashPassword(&input.Password)
 	user := models.User{
 		Email:       input.Email,
-        Password:    *hashedPassword,
+        Password:    hashedPassword,
         PhoneNumber: input.PhoneNumber,
         Role:        input.Role,
     }

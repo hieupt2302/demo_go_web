@@ -91,13 +91,13 @@ func ValidateRefreshToken(tokenString string) (*Claims, error) {
 	return nil, jwt.ErrSignatureInvalid
 }
 
-func HashPassword(password *string) *string {
+func HashPassword(password *string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
 	if err != nil {
 		panic(err)
 	}
 	hashedPwd := string(bytes)
-	return &hashedPwd
+	return hashedPwd
 } 
 
 func CheckPasswordHash(password, hash string) bool {

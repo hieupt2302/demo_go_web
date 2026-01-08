@@ -2,7 +2,6 @@ package routes
 
 import (
 	"demowebgo/routes/handle_routes"
-
 	"github.com/gin-gonic/gin"
 )
 
