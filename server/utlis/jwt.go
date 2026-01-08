@@ -5,7 +5,6 @@ import (
 	"os"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-
 )
 
 var accessSecretKey = []byte(os.Getenv("ACCESS_SECRET_KEY"))

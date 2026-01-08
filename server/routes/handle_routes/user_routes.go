@@ -1,14 +1,13 @@
 package handle_routes
+
 import (
-	"github.com/gin-gonic/gin"
 	"demowebgo/controllers"
-    "demowebgo/middlewares"
+	"demowebgo/middlewares"
+	"github.com/gin-gonic/gin"
 )
 
-
 func UserRoutes(router *gin.RouterGroup) {
-    router.GET("/:id", middlewares.AuthMiddleware(), controllers.GetUserByID)
-    router.PUT("/update/:id", middlewares.AuthMiddleware(), controllers.UpdateUser)
-    router.DELETE("/delete/:id", middlewares.AuthMiddleware(), middlewares.AdminMiddleware(), controllers.DeleteUser)
+    router.GET("/:id", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin", "user"}), controllers.GetUserByID)
+    router.PUT("/update/:id", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin", "user"}), controllers.UpdateUser)
+    router.DELETE("/delete/:id", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin"}), controllers.DeleteUser)
 }
-

@@ -3,7 +3,7 @@ package controllers
 import (
 	"demowebgo/config"
 	"demowebgo/models"
-	utils "demowebgo/utlis"
+	"demowebgo/utlis"
 	"net/http"
 	"strconv"
 
@@ -42,7 +42,7 @@ func Login(c *gin.Context) {
 
 func Register(c *gin.Context) {
 	var input struct {
-		Name        string `json:"name" binding:"required"`
+		Name     string `json:"name" binding:"required"`	
 		Email       string `json:"email" binding:"required,email"`
 		Password    string `json:"password" binding:"required,min=6"`
 		PhoneNumber string `json:"phone_number"`
