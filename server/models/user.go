@@ -7,6 +7,9 @@ type User struct {
 	Name      string `gorm:"type:varchar(100);not null" json:"name"`
 	Email     string `gorm:"type:varchar(100);not null;uniqueIndex" json:"email"`
 	Password  string `gorm:"type:varchar(255);not null" json:"password"`
+	PhoneNumber string  `json:"phone_number"`
+	Role 	string `gorm:"type:varchar(50)" json:"role"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	isDeleted bool `gorm:"default:false" json:"is_deleted"`
 }
