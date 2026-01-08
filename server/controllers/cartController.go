@@ -20,7 +20,20 @@ func AddToCart(c *gin.Context) {
     }
 
     userIDStr := c.MustGet("user_id").(string)
-    userID, _ := strconv.ParseUint(userIDStr, 10, 32)
+    userID, _ := strconv.Atoi(userIDStr)
+
+    var existingCart models.Cart
+    err := config.DB.Joins("JOIN cart_items ON cart_items.id = carts.cart_item_id").
+        Where("carts.user_id = ? AND cart_items.book_id = ?", userID, input.BookID).
+        Preload("CartItem").
+        First(&existingCart).Error
+
+    if err == nil {
+        existingCart.CartItem.Quantity += input.Quantity
+        config.DB.Save(&existingCart.CartItem)
+        c.JSON(http.StatusOK, gin.H{"message": "Đã cập nhật số lượng trong giỏ hàng"})
+        return
+    }
 
     cartItem := models.CartItem{
         BookID:   input.BookID,
@@ -33,8 +46,8 @@ func AddToCart(c *gin.Context) {
     }
 
     cartLink := models.Cart{
-        UserID:     uint(userID),
-        CartItemID: uint(cartItem.ID),
+        UserID:     userID,
+        CartItemID: cartItem.ID,
     }
 
     if err := config.DB.Create(&cartLink).Error; err != nil {
@@ -46,17 +59,34 @@ func AddToCart(c *gin.Context) {
 }
 
 func GetCart(c *gin.Context) {
+    // 1. Lấy userID từ Middleware
     userIDStr := c.MustGet("user_id").(string)
     
-    var user models.User
-    err := config.DB.Preload("CartItem.Book").First(&user, userIDStr).Error
+    // 2. Khai báo một lát (slice) vì giỏ hàng có nhiều món
+    var cartItems []models.Cart 
 
+    // 3. Thực hiện truy vấn
+    err := config.DB.
+		Preload("User").            // Nạp thông tin User cho từng dòng
+        Preload("CartItem.Book").   // Nạp thông tin món hàng và sách
+        Where("user_id = ?", userIDStr). // Lọc đúng theo ID người dùng
+        Find(&cartItems).Error      // Dùng Find để lấy danh sách
+		
     if err != nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": "Giỏ hàng trống"})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi truy vấn dữ liệu"})
+        return
+    }
+
+    // 4. Kiểm tra nếu giỏ hàng trống
+    if len(cartItems) == 0 {
+        c.JSON(http.StatusOK, gin.H{
+            "message": "Giỏ hàng hiện đang trống",
+            "cart":    []interface{}{},
+        })
         return
     }
 
     c.JSON(http.StatusOK, gin.H{
-        "cart": user.CartItem,
+        "cart": cartItems,
     })
 }
