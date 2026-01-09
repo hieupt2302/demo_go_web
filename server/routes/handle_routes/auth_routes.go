@@ -4,6 +4,7 @@ import (
 	"demowebgo/controllers"
 )
 func AuthRoutes(router *gin.RouterGroup) {
-	router.POST("/login", controllers.Login)
-	router.POST("/register", controllers.Register)
+	router.POST("/login", controllers.LoginUser)
+	router.POST("/register", controllers.RegisterUser)
+	router.POST("/refresh", controllers.RefreshToken)
 }

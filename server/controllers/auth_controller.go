@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Login(c *gin.Context) {
+func LoginUser(c *gin.Context) {
        var input struct {
 	       Email    string `json:"email" binding:"required"`
 	       Password string `json:"password" binding:"required"`
@@ -40,7 +40,7 @@ func Login(c *gin.Context) {
        })
 }
 
-func Register(c *gin.Context) {
+func RegisterUser(c *gin.Context) {
        var input struct {
 	       Fullname    string `json:"fullname" binding:"required"`
 	       Email       string `json:"email" binding:"required,email"`
@@ -75,4 +75,41 @@ func Register(c *gin.Context) {
        }
 
        c.JSON(http.StatusCreated, gin.H{"message": "Đăng ký tài khoản thành công"})
+}
+
+func RefreshToken(c *gin.Context) {
+	var input struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cần cung cấp refresh token"})
+		return
+	}
+
+	// Xác thực Refresh Token
+	claims, err := utils.ValidateRefreshToken(input.RefreshToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token không hợp lệ hoặc hết hạn"})
+		return
+	}
+
+	// Tìm user trong DB để lấy thông tin mới nhất
+	var user models.User
+	if err := config.DB.First(&user, claims.UserID).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Người dùng không tồn tại"})
+		return
+	}
+
+	// Tạo cặp token mới (Rotation)
+	newAT, newRT, err := utils.GenerateTokens(user.Email, strconv.Itoa(int(user.ID)), user.Role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi tạo token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"access_token":  newAT,
+		"refresh_token": newRT,
+	})
 }

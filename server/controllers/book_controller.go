@@ -1,4 +1,3 @@
-
 package controllers
 
 import (
@@ -74,7 +73,7 @@ func CreateBook(c *gin.Context) {
 // Lấy tất cả sách
 func GetAllBooks(c *gin.Context) {
 	var books []models.Book
-	if err := config.DB.Find(&books).Error; err != nil {
+	if err := config.DB.Preload("Category").Preload("Author").Find(&books).Error; err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
@@ -82,10 +81,10 @@ func GetAllBooks(c *gin.Context) {
 }
 
 // Lấy chi tiết sách theo id
-func GetBookByID(c *gin.Context) {
+func GetBookByIDs(c *gin.Context) {
 	var book models.Book
 	id := c.Param("id")
-	if err := config.DB.First(&book, id).Error; err != nil {
+	if err := config.DB.Preload("Author").Preload("Category").First(&book, id).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Book not found"})
 		return
 	}
@@ -177,15 +176,15 @@ func DeleteBook(c *gin.Context) {
 
 // Lấy sách theo tên (title)
 func GetBookByName(c *gin.Context) {
-       name := c.Query("name")
-       if name == "" {
-	       c.JSON(400, gin.H{"error": "Missing name query param"})
-	       return
-       }
-       var books []models.Book
-       if err := config.DB.Where("title LIKE ?", "%"+name+"%").Find(&books).Error; err != nil {
-	       c.JSON(500, gin.H{"error": err.Error()})
-	       return
-       }
-       c.JSON(200, books)
+	name := c.Query("name")
+	if name == "" {
+		c.JSON(400, gin.H{"error": "Missing name query param"})
+		return
+	}
+	var books []models.Book
+	if err := config.DB.Preload("Author").Preload("Category").Where("title LIKE ?", "%"+name+"%").Find(&books).Error; err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, books)
 }

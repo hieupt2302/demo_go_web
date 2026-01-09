@@ -33,6 +33,7 @@ func GenerateTokens(email, userID, userType string) (string, string, error) {
     }
 
     refreshClaims := &Claims{
+		UserID: userID,
         RegisteredClaims: jwt.RegisteredClaims{
             ExpiresAt: jwt.NewNumericDate(time.Unix(refreshTokenExpiry, 0)),
         },

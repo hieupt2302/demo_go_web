@@ -1,8 +1,9 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Book struct {
@@ -16,7 +17,9 @@ type Book struct {
 	CoverImageURL string         `json:"cover_image_url"`
 	Description   string         `gorm:"type:text" json:"description"`
 	CategoryID    uint           `json:"category_id"`
+	Category      Category       `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
 	AuthorID      uint           `json:"author_id"`
+	Author        Author         `gorm:"foreignKey:AuthorID" json:"author,omitempty"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
