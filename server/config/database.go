@@ -20,6 +20,6 @@ func ConnectDatabase() {
 		log.Fatal("Failed to connect to database: ", err)
 	}
 	DB = database
-	DB.AutoMigrate(&models.User{}, &models.Book{}, &models.CartItem{}, &models.Cart{})
+	DB.AutoMigrate(&models.Category{}, &models.Author{}, &models.Book{}, &models.User{}, &models.Order{}, &models.OrderItem{})
 	log.Println("✅ Database connected!")
 }

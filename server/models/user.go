@@ -5,17 +5,12 @@ import (
 )
 
 type User struct {
-
-	ID          int    `gorm:"primaryKey" json:"id"`
-	Email       string `gorm:"type:varchar(255);not null;unique" json:"email"`
-	Name        string `gorm:"type:varchar(100);not null" json:"name"`
-	Password    string `gorm:"type:varchar(255);not null" json:"password"`
-
-	PhoneNumber string `json:"phone_number"`
-	Role        string `gorm:"type:varchar(50);default:'user'" json:"role"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	IsDeleted   bool   `gorm:"default:false" json:"is_deleted"`
-	Cart        []Cart `gorm:"foreignKey:UserID" json:"cart_items,omitempty"`
-
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	Fullname     string    `gorm:"size:255" json:"fullname"`
+	Email        string    `gorm:"size:255;unique;not null" json:"email"`
+	PasswordHash string    `gorm:"not null" json:"-"`
+	Phone        string    `gorm:"size:15" json:"phone"`
+	Address      string    `gorm:"type:text" json:"address"`
+	Role         string    `gorm:"type:enum('customer', 'admin');default:'customer'" json:"role"`
+	CreatedAt    time.Time `json:"created_at"`
 }

@@ -9,10 +9,8 @@ import (
 func SetupRoutes(router *gin.Engine) {
 	authRoute := router.Group("/auth")
 	handle_routes.AuthRoutes(authRoute)
-	bookRoute := router.Group("/book")
+	bookRoute := router.Group("/book", middlewares.AuthMiddleware())
 	handle_routes.BookRoutes(bookRoute)
 	userRoute := router.Group("/user", middlewares.AuthMiddleware())
 	handle_routes.UserRoutes(userRoute)
-	cartRoute := router.Group("/cart", middlewares.AuthMiddleware())
-    handle_routes.CartRoutes(cartRoute)
 }
