@@ -9,7 +9,7 @@ import (
 func SetupRoutes(router *gin.Engine) {
 	authRoute := router.Group("/auth")
 	handle_routes.AuthRoutes(authRoute)
-	bookRoute := router.Group("/book", middlewares.AuthMiddleware())
+	bookRoute := router.Group("/book")
 	handle_routes.BookRoutes(bookRoute)
 	userRoute := router.Group("/user", middlewares.AuthMiddleware())
 	handle_routes.UserRoutes(userRoute)
