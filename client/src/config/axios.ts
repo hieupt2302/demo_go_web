@@ -38,7 +38,7 @@ api.interceptors.response.use(
           refresh_token: authStore.refreshToken,
         });
 
-        const { access_token, refresh_token } = response.data;
+        const { access_token, refresh_token } = response.data.data;
 
         authStore.setTokens(access_token, refresh_token);
 

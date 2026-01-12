@@ -22,9 +22,17 @@ export interface Order {
 
 export interface CreateOrderInput {
   user_id: number;
+  total_amount: number;
+  status?: string;
   shipping_address: string;
   order_items: {
     book_id: number;
     quantity: number;
+    price: number;
   }[];
+}
+
+export interface UpdateOrderInput {
+  status?: string;
+  shipping_address?: string;
 }

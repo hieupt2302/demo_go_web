@@ -38,8 +38,10 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { authApi } from '../api/auth'
+import { userApi } from '../api/user'
 import { useAuthStore } from '../stores/user'
 import BaseInput from '../components/common/BaseInput.vue'
+import { jwtDecode } from 'jwt-decode'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -58,15 +60,12 @@ const handleLogin = async () => {
   
   try {
     const res = await authApi.login(loginForm)
-    console.log('Dữ liệu trả về từ API:', res)
-    const { access_token, refresh_token, user } = res.data
-    
+    const { access_token, refresh_token } = res.data.data
+    const decoded: any = jwtDecode(access_token)
+    const userId = decoded.user_id  
     authStore.setTokens(access_token, refresh_token)
-    if (user) authStore.setUser(user)
-
-    console.log('Đăng nhập thành công:', user)
     
-    router.push('/')
+    router.push({ path: '/', query: { uid: userId } })
   } catch (err: any) {
     error.value = err.response?.data?.error || 'Đăng nhập thất bại. Vui lòng thử lại.'
   } finally {

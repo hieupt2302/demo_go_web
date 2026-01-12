@@ -1,47 +1,27 @@
 <template>
-  <div class="bg-gray-50">
-    <nav class="bg-white shadow-sm py-4 px-8 flex justify-between items-center">
-      <div class="text-xl font-bold text-blue-600">BOOKSTORE</div>
-      
-      <div class="flex items-center gap-4">
-        <div v-if="authStore.isAuthenticated" class="flex items-center gap-3">
-          <div class="flex flex-col items-end">
-            <span class="text-sm font-medium text-gray-700">Xin chào,</span>
-            <span class="text-blue-600 font-bold">{{ authStore.user?.fullname }}</span>
-          </div>
-          <button 
-            class="text-xs text-red-500 hover:underline ml-2"
-          >
-            Đăng xuất
-          </button>
-        </div>
-
-        <div v-else class="flex gap-2">
-          <router-link 
-            to="/login" 
-            class="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50"
-          >
-            Đăng nhập
-          </router-link>
-          <router-link 
-            to="/register" 
-            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-          >
-            Đăng ký
-          </router-link>
-        </div>
-      </div>
-    </nav>
-
+  <div class="bg-gray-50 min-h-screen">
     <HeroSection />
-    <BookSection title="Best Seller Books" :books="books" @add-to-cart="handleAddToCart" />
-    </div>
+
+    <BookSection 
+      title="Best Seller Books" 
+      :books="books" 
+      :loading="loading"
+      @add-to-cart="handleAddToCart" 
+    />
+
+    <FeaturedSection />
+    <AwardsSection />
+
+    <Toast v-if="toastMessage" :message="toastMessage" />
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { bookApi } from '../api/book'
+import { userApi } from '../api/user'
 import type { Book } from '../interfaces/book.interface'
 import HeroSection from '../components/home/HeroSection.vue'
 import BookSection from '../components/home/BookSection.vue'
@@ -50,18 +30,38 @@ import AwardsSection from '../components/home/AwardsSection.vue'
 import Toast from '../components/common/Toast.vue'
 import { useAuthStore } from '../stores/user'
 
+const route = useRoute()
+const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 const books = ref<Book[]>([])
 const loading = ref(false)
 const toastMessage = ref('')
-console.log('Auth Store:', authStore)
+
+const fetchUserData = async () => {
+  const userId = route.query.uid
+  console.log(userId)
+  
+  // Nếu có UID và trong Store chưa có thông tin user
+  if (userId && !authStore.user) {
+    try {
+      const res = await userApi.getUserById(Number(userId))
+      // Cập nhật thông tin user vào store (để hiển thị fullname trên Header)
+      authStore.setUser(res.data.data)
+      
+      // Sau khi lấy xong, xóa uid khỏi URL cho đẹp (optional)
+      router.replace({ query: {} })
+    } catch (error) {
+      console.error("Lỗi lấy thông tin user:", error)
+    }
+  }
+}
 
 const fetchBooks = async () => {
   loading.value = true
   try {
     const res = await bookApi.getAll()
-    books.value = res.data 
+    books.value = res.data.data 
   } catch (error) {
     console.error("Lỗi API:", error)
   } finally {
@@ -77,5 +77,8 @@ const handleAddToCart = (book: Book) => {
   }, 100)
 }
 
-onMounted(fetchBooks)
+onMounted(async () => {
+  await fetchUserData()
+  await fetchBooks()
+})
 </script>
