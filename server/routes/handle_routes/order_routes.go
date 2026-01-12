@@ -7,7 +7,10 @@ import (
 )
 
 func OrderRoutes(router *gin.RouterGroup) {
-	router.POST("/create", middlewares.AuthorizeJWT([]string{"user"}), controllers.CreateOrder)
+	router.POST("/create", controllers.CreateOrder)
 	router.GET("/:id", controllers.GetOrderByID)
 	router.GET("/", middlewares.AuthorizeJWT([]string{"admin"}), controllers.GetAllOrders)
+	router.GET("/user/:userId", controllers.GetOrdersByUserID)
+	router.PUT("/:id", controllers.UpdateOrder)
+	router.DELETE("/:id", controllers.DeleteOrder)
 }

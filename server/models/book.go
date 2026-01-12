@@ -8,7 +8,7 @@ import (
 
 type Book struct {
 	ID            uint           `gorm:"primaryKey" json:"id"`
-	Title         string         `gorm:"size:255;not null;index" json:"title"`
+	Title         string         `gorm:"size:255;not null;index:idx_book_title" json:"title"`
 	ISBN          string         `gorm:"size:13;unique" json:"isbn"`
 	Price         float64        `gorm:"type:decimal(10,2);not null" json:"price"`
 	StockQuantity int            `gorm:"default:0" json:"stock_quantity"`

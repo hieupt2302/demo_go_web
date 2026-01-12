@@ -15,7 +15,7 @@ func SetupRoutes(router *gin.Engine) {
 	handle_routes.UserRoutes(userRoute)
 	authorRoute := router.Group("/author")
 	handle_routes.AuthorRoutes(authorRoute)
-	categoryRoute := router.Group("/category", middlewares.AuthMiddleware())
+	categoryRoute := router.Group("/category")
 	handle_routes.CategoryRoutes(categoryRoute)
 	orderRoute := router.Group("/order", middlewares.AuthMiddleware())
 	handle_routes.OrderRoutes(orderRoute)

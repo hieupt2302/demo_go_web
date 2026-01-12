@@ -114,12 +114,6 @@ func RefreshToken(c *gin.Context) {
     refreshResponse := gin.H{
         "access_token":  newAT,
         "refresh_token": newRT,
-        "user": gin.H{
-            "id":       user.ID,
-            "fullname": user.Fullname,
-            "email":    user.Email,
-            "role":     user.Role,
-        },
     }
 
     utils.Success(c, http.StatusOK, refreshResponse, "Lấy mã xác thực mới thành công")

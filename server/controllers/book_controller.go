@@ -175,17 +175,64 @@ func DeleteBook(c *gin.Context) {
 	utils.Success(c, http.StatusOK, nil, "Book deleted successfully")
 }
 
-// Lấy sách theo tên (title)
-func GetBookByName(c *gin.Context) {
-	name := c.Query("name")
-	if name == "" {
-		utils.Error(c, http.StatusBadRequest, "Missing name query param")
-		return
-	}
-	var books []models.Book
-	if err := config.DB.Preload("Author").Preload("Category").Where("title LIKE ?", "%"+name+"%").Find(&books).Error; err != nil {
-		utils.Error(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	utils.Success(c, http.StatusOK, books, "Books retrieved successfully")
+// server/controllers/book_controller.go
+
+func AdvancedSearch(c *gin.Context) {
+    searchType := c.Query("type") // book, author, hoặc category
+    query := c.Query("q")
+    
+    if query == "" {
+        utils.Error(c, http.StatusBadRequest, "Từ khóa tìm kiếm không được để trống")
+        return
+    }
+
+    var bookIDs []uint
+    searchPattern := query + "%" // Tận dụng B-Tree Index (tìm từ đầu chuỗi)
+
+    // BƯỚC 1: Tìm ID sách dựa trên lựa chọn của người dùng
+    switch searchType {
+    case "author":
+        // Tìm ID sách từ tên tác giả
+        config.DB.Model(&models.Book{}).
+            Joins("JOIN authors ON authors.id = books.author_id").
+            Where("authors.name LIKE ?", searchPattern).
+            Pluck("books.id", &bookIDs)
+            
+    case "category":
+        // Tìm ID sách từ tên thể loại
+        config.DB.Model(&models.Book{}).
+            Joins("JOIN categories ON categories.id = books.category_id").
+            Where("categories.name LIKE ?", searchPattern).
+            Pluck("books.id", &bookIDs)
+            
+    case "book":
+        // Tìm ID sách trực tiếp từ tiêu đề sách
+        config.DB.Model(&models.Book{}).
+            Where("title LIKE ?", searchPattern).
+            Pluck("id", &bookIDs)
+            
+    default:
+        utils.Error(c, http.StatusBadRequest, "Loại tìm kiếm không hợp lệ")
+        return
+    }
+
+    // BƯỚC 2: Nếu không tìm thấy ID nào, trả về mảng rỗng ngay lập tức
+    if len(bookIDs) == 0 {
+        utils.Success(c, http.StatusOK, []models.Book{}, "Không tìm thấy kết quả")
+        return
+    }
+
+    // BƯỚC 3: Join 3 bảng để lấy thông tin chi tiết dựa trên danh sách ID đã tìm được
+    // Thao tác này cực nhanh vì lọc theo Primary Key (ID IN ?)
+    var books []models.Book
+    err := config.DB.Preload("Category").Preload("Author").
+        Where("id IN ?", bookIDs).
+        Find(&books).Error
+
+    if err != nil {
+        utils.Error(c, http.StatusInternalServerError, "Lỗi khi truy vấn dữ liệu")
+        return
+    }
+
+    utils.Success(c, http.StatusOK, books, "Tìm thấy kết quả")
 }

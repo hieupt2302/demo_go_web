@@ -9,5 +9,5 @@ import (
 func UserRoutes(router *gin.RouterGroup) {
     router.GET("/:id", controllers.GetUserByID)
     router.PUT("/update/:id", controllers.UpdateUser)
-    router.DELETE("/delete/:id", middlewares.AuthorizeJWT([]string{"admin"}), controllers.DeleteUser)
+	router.DELETE("/delete/:id", middlewares.AuthorizeJWT([]string{"admin"}), controllers.DeleteUser)
 }
