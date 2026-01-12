@@ -84,28 +84,28 @@ func RefreshToken(c *gin.Context) {
 
     // Sử dụng utlis.Error cho tính nhất quán
     if err := c.ShouldBindJSON(&input); err != nil {
-        utlis.Error(c, http.StatusBadRequest, "Cần cung cấp refresh token")
+        utils.Error(c, http.StatusBadRequest, "Cần cung cấp refresh token")
         return
     }
 
     // Xác thực Refresh Token qua helper jwt
-    claims, err := utlis.ValidateRefreshToken(input.RefreshToken)
+    claims, err := utils.ValidateRefreshToken(input.RefreshToken)
     if err != nil {
-        utlis.Error(c, http.StatusUnauthorized, "Refresh token không hợp lệ hoặc hết hạn")
+        utils.Error(c, http.StatusUnauthorized, "Refresh token không hợp lệ hoặc hết hạn")
         return
     }
 
     // Tìm user trong DB để lấy thông tin mới nhất
     var user models.User
     if err := config.DB.First(&user, claims.UserID).Error; err != nil {
-        utlis.Error(c, http.StatusUnauthorized, "Người dùng không tồn tại")
+        utils.Error(c, http.StatusUnauthorized, "Người dùng không tồn tại")
         return
     }
 
     // Tạo cặp token mới (Rotation)
-    newAT, newRT, err := utlis.GenerateTokens(user.Email, strconv.Itoa(int(user.ID)), user.Role)
+    newAT, newRT, err := utils.GenerateTokens(user.Email, strconv.Itoa(int(user.ID)), user.Role)
     if err != nil {
-        utlis.Error(c, http.StatusInternalServerError, "Lỗi tạo token")
+        utils.Error(c, http.StatusInternalServerError, "Lỗi tạo token")
         return
     }
 
@@ -122,5 +122,5 @@ func RefreshToken(c *gin.Context) {
         },
     }
 
-    utlis.Success(c, http.StatusOK, refreshResponse, "Lấy mã xác thực mới thành công")
+    utils.Success(c, http.StatusOK, refreshResponse, "Lấy mã xác thực mới thành công")
 }

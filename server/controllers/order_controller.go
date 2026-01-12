@@ -5,16 +5,18 @@ import (
        "demowebgo/models"
        "github.com/gin-gonic/gin"
        "time"
+       "demowebgo/utlis"
+       "net/http"
 )
 
 // Lấy tất cả đơn hàng
 func GetAllOrders(c *gin.Context) {
        var orders []models.Order
        if err := config.DB.Preload("OrderItems.Book").Find(&orders).Error; err != nil {
-	       c.JSON(500, gin.H{"error": err.Error()})
+	       utils.Error(c, http.StatusInternalServerError, err.Error())
 	       return
        }
-       c.JSON(200, orders)
+       utils.Success(c, http.StatusOK, orders, "Get orders successfully")
 }
 
 // Lấy đơn hàng theo id
@@ -22,10 +24,10 @@ func GetOrderByID(c *gin.Context) {
        var order models.Order
        id := c.Param("id")
        if err := config.DB.Preload("OrderItems.Book").First(&order, id).Error; err != nil {
-	       c.JSON(404, gin.H{"error": "Order not found"})
+	       utils.Error(c, http.StatusNotFound, "Order not found")
 	       return
        }
-       c.JSON(200, order)
+       utils.Success(c, http.StatusOK, order, "Get order successfully")
 }
 
 // Tạo mới đơn hàng
@@ -42,7 +44,7 @@ func CreateOrder(c *gin.Context) {
 	       } `json:"order_items" binding:"required"`
        }
        if err := c.ShouldBindJSON(&input); err != nil {
-	       c.JSON(400, gin.H{"error": err.Error()})
+	       utils.Error(c, http.StatusBadRequest, err.Error())
 	       return
        }
        order := models.Order{
@@ -60,10 +62,10 @@ func CreateOrder(c *gin.Context) {
 	       })
        }
        if err := config.DB.Create(&order).Error; err != nil {
-	       c.JSON(500, gin.H{"error": err.Error()})
+	       utils.Error(c, http.StatusInternalServerError, err.Error())
 	       return
        }
-       c.JSON(201, order)
+       utils.Success(c, http.StatusCreated, order, "Order created successfully")
 }
 
 // Cập nhật đơn hàng
@@ -71,7 +73,7 @@ func UpdateOrder(c *gin.Context) {
        var order models.Order
        id := c.Param("id")
        if err := config.DB.Preload("OrderItems").First(&order, id).Error; err != nil {
-	       c.JSON(404, gin.H{"error": "Order not found"})
+	       utils.Error(c, http.StatusNotFound, "Order not found")
 	       return
        }
        var input struct {
@@ -79,7 +81,7 @@ func UpdateOrder(c *gin.Context) {
 	       ShippingAddress string `json:"shipping_address"`
        }
        if err := c.ShouldBindJSON(&input); err != nil {
-	       c.JSON(400, gin.H{"error": err.Error()})
+	       utils.Error(c, http.StatusBadRequest, err.Error())
 	       return
        }
        if input.Status != "" {
@@ -89,10 +91,10 @@ func UpdateOrder(c *gin.Context) {
 	       order.ShippingAddress = input.ShippingAddress
        }
        if err := config.DB.Save(&order).Error; err != nil {
-	       c.JSON(500, gin.H{"error": err.Error()})
+	       utils.Error(c, http.StatusInternalServerError, err.Error())
 	       return
        }
-       c.JSON(200, order)
+       utils.Success(c, http.StatusOK, order, "Order updated successfully")
 }
 
 // Xóa đơn hàng
@@ -100,12 +102,12 @@ func DeleteOrder(c *gin.Context) {
        var order models.Order
        id := c.Param("id")
        if err := config.DB.First(&order, id).Error; err != nil {
-	       c.JSON(404, gin.H{"error": "Order not found"})
+	       utils.Error(c, http.StatusNotFound, "Order not found")
 	       return
        }
        if err := config.DB.Delete(&order).Error; err != nil {
-	       c.JSON(500, gin.H{"error": err.Error()})
+	       utils.Error(c, http.StatusInternalServerError, err.Error())
 	       return
        }
-       c.JSON(200, gin.H{"message": "Order deleted successfully"})
+       utils.Success(c, http.StatusOK, nil, "Order deleted successfully")
 }

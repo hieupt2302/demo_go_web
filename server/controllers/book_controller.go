@@ -4,8 +4,9 @@ import (
 	"demowebgo/config"
 	"demowebgo/models"
 	"time"
-
+	"demowebgo/utlis"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func CreateBook(c *gin.Context) {
@@ -21,7 +22,7 @@ func CreateBook(c *gin.Context) {
 		AuthorID      uint    `form:"author_id"`
 	}
 	if err := c.ShouldBind(&input); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		utils.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -32,7 +33,7 @@ func CreateBook(c *gin.Context) {
 		// Save file to uploads folder
 		uploadPath := "uploads/" + file.Filename
 		if err := c.SaveUploadedFile(file, uploadPath); err != nil {
-			c.JSON(500, gin.H{"error": "Failed to save image"})
+			utils.Error(c, http.StatusInternalServerError, "Failed to save image")
 			return
 		}
 		coverImageURL = uploadPath
@@ -44,7 +45,7 @@ func CreateBook(c *gin.Context) {
 	if input.PublishDate != "" {
 		t, err := time.Parse("2006-01-02", input.PublishDate)
 		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid publish date format. Use YYYY-MM-DD."})
+			utils.Error(c, http.StatusBadRequest, "Invalid publish date format. Use YYYY-MM-DD.")
 			return
 		}
 		publishDate = t
@@ -64,20 +65,20 @@ func CreateBook(c *gin.Context) {
 	}
 
 	if err := config.DB.Create(&book).Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		utils.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(201, book)
+	utils.Success(c, http.StatusCreated, book, "Book created successfully")
 }
 
 // Lấy tất cả sách
 func GetAllBooks(c *gin.Context) {
 	var books []models.Book
 	if err := config.DB.Preload("Category").Preload("Author").Find(&books).Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		utils.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(200, books)
+	utils.Success(c, http.StatusOK, books, "Books retrieved successfully")
 }
 
 // Lấy chi tiết sách theo id
@@ -85,10 +86,10 @@ func GetBookByIDs(c *gin.Context) {
 	var book models.Book
 	id := c.Param("id")
 	if err := config.DB.Preload("Author").Preload("Category").First(&book, id).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Book not found"})
+		utils.Error(c, http.StatusNotFound, "Book not found")
 		return
 	}
-	c.JSON(200, book)
+	utils.Success(c, http.StatusOK, book, "Book retrieved successfully")
 }
 
 // Cập nhật sách
@@ -96,7 +97,7 @@ func UpdateBook(c *gin.Context) {
 	var book models.Book
 	id := c.Param("id")
 	if err := config.DB.First(&book, id).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Book not found"})
+		utils.Error(c, http.StatusNotFound, "Book not found")
 		return
 	}
 
@@ -112,7 +113,7 @@ func UpdateBook(c *gin.Context) {
 		AuthorID      uint    `form:"author_id"`
 	}
 	if err := c.ShouldBind(&input); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		utils.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -153,10 +154,10 @@ func UpdateBook(c *gin.Context) {
 	}
 
 	if err := config.DB.Save(&book).Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		utils.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(200, book)
+	utils.Success(c, http.StatusOK, book, "Book updated successfully")
 }
 
 // Xóa sách
@@ -164,27 +165,27 @@ func DeleteBook(c *gin.Context) {
 	var book models.Book
 	id := c.Param("id")
 	if err := config.DB.First(&book, id).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Book not found"})
+		utils.Error(c, http.StatusNotFound, "Book not found")
 		return
 	}
 	if err := config.DB.Delete(&book).Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		utils.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(200, gin.H{"message": "Book deleted successfully"})
+	utils.Success(c, http.StatusOK, nil, "Book deleted successfully")
 }
 
 // Lấy sách theo tên (title)
 func GetBookByName(c *gin.Context) {
 	name := c.Query("name")
 	if name == "" {
-		c.JSON(400, gin.H{"error": "Missing name query param"})
+		utils.Error(c, http.StatusBadRequest, "Missing name query param")
 		return
 	}
 	var books []models.Book
 	if err := config.DB.Preload("Author").Preload("Category").Where("title LIKE ?", "%"+name+"%").Find(&books).Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		utils.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(200, books)
+	utils.Success(c, http.StatusOK, books, "Books retrieved successfully")
 }

@@ -4,7 +4,8 @@ import (
 	"demowebgo/config"
 	"demowebgo/models"
 	"github.com/gin-gonic/gin"
-       "demowebgo/utlis"
+    "demowebgo/utlis"
+	"net/http"
 )
 
 
@@ -13,18 +14,18 @@ func GetUserByID(c *gin.Context) {
 	id := c.Param("id")
 
 	if err := config.DB.Where("id = ?", id).First(&user).Error; err != nil {
-		utlis.Error(c, http.StatusNotFound, "User not found")
+		utils.Error(c, http.StatusNotFound, "User not found")
 		return
 	}
 
 	// Chuẩn hóa: Trả về user trong trường "data"
-	utlis.Success(c, http.StatusOK, user, "Get user successfully")
+	utils.Success(c, http.StatusOK, user, "Get user successfully")
 }
 func UpdateUser(c *gin.Context) {
 	var user models.User
 	id := c.Param("id")
 	if err := config.DB.First(&user, id).Error; err != nil {
-		utlis.Error(c, http.StatusNotFound, "User not found")
+		utils.Error(c, http.StatusNotFound, "User not found")
 		return
 	}
 
@@ -36,7 +37,7 @@ func UpdateUser(c *gin.Context) {
 	}
 	
 	if err := c.ShouldBindJSON(&input); err != nil {
-		utlis.Error(c, http.StatusBadRequest, err.Error())
+		utils.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -47,12 +48,12 @@ func UpdateUser(c *gin.Context) {
 	user.Role = input.Role
 
 	if err := config.DB.Save(&user).Error; err != nil {
-		utlis.Error(c, http.StatusInternalServerError, err.Error())
+		utils.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	// Chuẩn hóa: Trả về user đã cập nhật trong trường "data"
-	utlis.Success(c, http.StatusOK, user, "User updated successfully")
+	utils.Success(c, http.StatusOK, user, "User updated successfully")
 }
 
 func DeleteUser(c *gin.Context) {
@@ -60,16 +61,16 @@ func DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 
 	if err := config.DB.First(&user, id).Error; err != nil {
-		utlis.Error(c, http.StatusNotFound, "User not found")
+		utils.Error(c, http.StatusNotFound, "User not found")
 		return
 	}
 
 	if err := config.DB.Delete(&user).Error; err != nil {
-		utlis.Error(c, http.StatusInternalServerError, err.Error())
+		utils.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	// Chuẩn hóa: Data là nil khi xóa, sử dụng message để thông báo
-	utlis.Success(c, http.StatusOK, nil, "User deleted successfully")
+	utils.Success(c, http.StatusOK, nil, "User deleted successfully")
 }
 
