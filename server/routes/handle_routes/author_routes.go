@@ -7,7 +7,7 @@ import (
 func AuthorRoutes(router *gin.RouterGroup) {
 	router.GET("/", controllers.GetAllAuthors)
 	router.GET("/:id", controllers.GetAuthorByID)
-	router.POST("/", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin"}), controllers.CreateAuthor)
-	router.PUT("/:id", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin"}), controllers.UpdateAuthor)
-	router.DELETE("/:id", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin"}), controllers.DeleteAuthor)
+	router.POST("/create", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin"}), controllers.CreateAuthor)
+	router.PUT("/update/:id", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin"}), controllers.UpdateAuthor)
+	router.DELETE("/delete/:id", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin"}), controllers.DeleteAuthor)
 }

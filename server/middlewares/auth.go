@@ -5,6 +5,7 @@ import (
     "net/http"
     "demowebgo/utlis" 
     "github.com/gin-gonic/gin"
+    "log"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
@@ -33,7 +34,7 @@ func AuthMiddleware() gin.HandlerFunc {
         c.Set("user_id", claims.UserID)
         c.Set("email", claims.Email)
         c.Set("role", claims.Role)
-
+        log.Printf("[Middleware] Đã xác thực UserID: %v", claims.UserID)
         c.Next()
     }
 }

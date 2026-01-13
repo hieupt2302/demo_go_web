@@ -3,17 +3,9 @@ import { useAuthStore } from "../stores/user";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-api.interceptors.request.use((config) => {
-  const authStore = useAuthStore();
-  if (authStore.accessToken) {
-    config.headers.Authorization = `Bearer ${authStore.accessToken}`;
-  }
-  return config;
+  // headers: {
+  //   'Content-Type': 'application/json',
+  // },
 });
 
 api.interceptors.request.use((config) => {

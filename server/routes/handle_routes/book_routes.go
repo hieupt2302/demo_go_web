@@ -10,7 +10,7 @@ func BookRoutes(router *gin.RouterGroup) {
 	router.GET("/", controllers.GetAllBooks)
 	router.GET("/advanced-search", controllers.AdvancedSearch)
 	router.GET("/:id", controllers.GetBookByIDs)
-	router.POST("/create", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin"}), middlewares.UploadFileMiddleware("file",20 << 20), controllers.CreateBook)
+	router.POST("/create", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin"}), middlewares.UploadFileMiddleware("file", 20 << 20), controllers.CreateBook)
 	router.PUT("/update/:id", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin"}), controllers.UpdateBook)
 	router.DELETE("/delete/:id", middlewares.AuthMiddleware(), middlewares.AuthorizeJWT([]string{"admin"}), controllers.DeleteBook)
 	

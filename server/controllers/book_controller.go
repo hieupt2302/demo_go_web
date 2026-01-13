@@ -3,10 +3,12 @@ package controllers
 import (
 	"demowebgo/config"
 	"demowebgo/models"
-	"time"
 	"demowebgo/utlis"
-	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 func CreateBook(c *gin.Context) {
@@ -21,25 +23,18 @@ func CreateBook(c *gin.Context) {
 		CategoryID    uint    `form:"category_id"`
 		AuthorID      uint    `form:"author_id"`
 	}
+
+	
 	if err := c.ShouldBind(&input); err != nil {
 		utils.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-
+	log.Printf("Input Data Binded: %+v", input)
 	// Handle file upload
-	file, err := c.FormFile("cover_image")
-	var coverImageURL string
-	if err == nil {
-		// Save file to uploads folder
-		uploadPath := "uploads/" + file.Filename
-		if err := c.SaveUploadedFile(file, uploadPath); err != nil {
-			utils.Error(c, http.StatusInternalServerError, "Failed to save image")
-			return
-		}
-		coverImageURL = uploadPath
-	} else {
-		coverImageURL = ""
-	}
+	coverImageURL := ""
+    if path, exists := c.Get("file_path"); exists {
+        coverImageURL = path.(string)
+    }
 
 	var publishDate time.Time
 	if input.PublishDate != "" {

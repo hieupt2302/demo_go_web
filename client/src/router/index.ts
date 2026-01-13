@@ -5,6 +5,7 @@ import RegisterView from '../views/RegisterView.vue'
 import HomeView from '../views/HomeView.vue'
 import CartView from '../views/CartView.vue'
 import OrdersView from '../views/OrdersView.vue'
+import AdminView from '../views/AdminView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -33,6 +34,12 @@ const router = createRouter({
       path: '/orders',
       name: 'orders',
       component: OrdersView
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: AdminView,
+      meta: { requiresAdmin: true }
     }
   ]
 })
@@ -51,6 +58,11 @@ router.beforeEach((to, from, next) => {
 
   // Nếu đã đăng nhập mà cố tình vào lại trang login/register
   if (authStore.isAuthenticated && (to.name === 'login' || to.name === 'register')) {
+    return next({ name: 'home' })
+  }
+
+  // Kiểm tra quyền truy cập
+  if (to.meta?.requiresAdmin && !authStore.isAdmin) {
     return next({ name: 'home' })
   }
 
