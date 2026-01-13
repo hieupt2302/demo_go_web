@@ -17,6 +17,7 @@ func main() {
 		MaxAge: 12 * time.Hour,
 	}))
 	config.ConnectDatabase()
+	router.Static("/uploads", "./uploads")
 	routes.SetupRoutes(router)
 	router.Run(":8080")
 }

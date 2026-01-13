@@ -2,12 +2,14 @@ export interface Category {
   id: number;
   name: string;
   description?: string;
+  books?: Book[];
 }
 
 export interface Author {
   id: number;
   name: string;
   bio?: string;
+  books?: Book[];
 }
 
 export interface Book {
@@ -20,8 +22,8 @@ export interface Book {
   publish_date?: string;
   cover_image_url: string;
   description: string;
-  category_id: number;
-  author_id: number;
-  category?: Category;
-  author?: Author;
+  category_ids: number[]; 
+  author_ids: number[];
+  categories?: Category[];
+  authors?: Author[];
 }

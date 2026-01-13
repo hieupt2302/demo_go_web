@@ -51,7 +51,9 @@
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-bold text-gray-900 truncate">{{ book.title }}</p>
                   <p class="text-xs text-gray-500 truncate">
-                    {{ book.author?.name }} | {{ book.category?.name }}
+                    {{ book.authors?.map(a => a.name).join(', ') || 'Chưa có tác giả' }} 
+                    | 
+                    {{ book.categories?.map(c => c.name).join(', ') || 'Chưa có thể loại' }}
                   </p>
                 </div>
                 <div class="text-blue-600 font-bold text-sm shrink-0">{{ formatPrice(book.price) }}đ</div>
@@ -150,6 +152,7 @@ const onSearchInput = () => {
         q: searchQuery.value.trim()
       })
       searchResults.value = res.data.data
+      console.log(searchResults.value)
     } catch (error) {
       console.error("Lỗi search:", error)
       searchResults.value = []

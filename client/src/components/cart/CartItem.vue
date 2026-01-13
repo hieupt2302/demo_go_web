@@ -2,17 +2,21 @@
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center space-x-4 hover:shadow-md transition-shadow">
     <!-- Book Image -->
     <div class="flex-shrink-0 w-24 h-32 bg-gray-100 rounded-lg overflow-hidden">
-      <img 
-        :src="item.book.cover_image_url || 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=150&h=200&fit=crop'" 
-        class="w-full h-full object-cover"
-        alt="book cover"
-      />
+      <router-link :to="`/book/${item.book.id}`">
+        <img 
+          :src="getImageUrl(item.book.cover_image_url) || 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=150&h=200&fit=crop'" 
+          class="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+          alt="book cover"
+        />
+      </router-link>
     </div>
 
     <!-- Book Info -->
     <div class="flex-grow">
-      <h3 class="font-bold text-gray-900 mb-1">{{ item.book.title }}</h3>
-      <p class="text-sm text-gray-500 mb-2">{{ item.book.author?.name || 'Ẩn danh' }}</p>
+      <router-link :to="`/book/${item.book.id}`" class="hover:text-blue-600">
+        <h3 class="font-bold text-gray-900 mb-1 line-clamp-1">{{ item.book.title }}</h3>
+      </router-link>
+      <p class="text-sm text-gray-500 mb-2">{{ item.book.authors?.map(a => a.name).join(', ') || 'Ẩn danh' }}</p>
       <p class="text-lg font-bold text-blue-600">{{ formatPrice(item.book.price) }}đ</p>
     </div>
 
@@ -65,5 +69,10 @@ defineEmits(['increment', 'decrement', 'remove'])
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN').format(price)
+}
+const getImageUrl = (path: string) => {
+  if (!path) return '/placeholder-book.jpg'
+  if (path.startsWith('http')) return path
+  return `${import.meta.env.VITE_API_BASE_URL}/${path}`.replace('/api/', '/').replace(/\\/g, '/')
 }
 </script>

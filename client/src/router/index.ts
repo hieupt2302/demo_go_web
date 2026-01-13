@@ -6,6 +6,7 @@ import HomeView from '../views/HomeView.vue'
 import CartView from '../views/CartView.vue'
 import OrdersView from '../views/OrdersView.vue'
 import AdminView from '../views/AdminView.vue'
+import BookDetail from '../components/product/BookDetail.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -40,6 +41,11 @@ const router = createRouter({
       name: 'admin',
       component: AdminView,
       meta: { requiresAdmin: true }
+    },
+    {
+      path: '/book/:id',
+      name: 'book',
+      component: BookDetail
     }
   ]
 })
@@ -47,11 +53,9 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
-  // Danh sách các trang không cần đăng nhập
   const publicPages = ['login', 'register', 'home']
   const authRequired = !publicPages.includes(to.name as string)
 
-  // Nếu truy cập trang yêu cầu đăng nhập mà chưa có accessToken
   if (authRequired && !authStore.accessToken) {
     return next({ name: 'login' })
   }
