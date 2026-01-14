@@ -7,6 +7,7 @@ import CartView from '../views/CartView.vue'
 import OrdersView from '../views/OrdersView.vue'
 import AdminView from '../views/AdminView.vue'
 import BookDetail from '../components/product/BookDetail.vue'
+import PaymentResult from '../views/PaymentResult.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,6 +47,11 @@ const router = createRouter({
       path: '/book/:id',
       name: 'book',
       component: BookDetail
+    },
+    {
+      path: '/checkout/result',
+      name: 'paymentResult',
+      component: PaymentResult
     }
   ]
 })

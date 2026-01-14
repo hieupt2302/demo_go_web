@@ -1,9 +1,11 @@
 package routes
 
 import (
-	"demowebgo/routes/handle_routes"
-	"github.com/gin-gonic/gin"
+	"demowebgo/controllers"
 	"demowebgo/middlewares"
+	"demowebgo/routes/handle_routes"
+
+	"github.com/gin-gonic/gin"
 )
 
 func SetupRoutes(router *gin.Engine) {
@@ -19,4 +21,5 @@ func SetupRoutes(router *gin.Engine) {
 	handle_routes.CategoryRoutes(categoryRoute)
 	orderRoute := router.Group("/order", middlewares.AuthMiddleware())
 	handle_routes.OrderRoutes(orderRoute)
+	router.GET("/vnpay_ipn", controllers.VNPAY_IPN)
 }

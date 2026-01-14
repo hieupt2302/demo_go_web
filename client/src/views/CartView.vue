@@ -1,5 +1,3 @@
-
-
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useCartStore } from '../stores/cart'
@@ -7,6 +5,7 @@ import { useAuthStore } from '../stores/user'
 import { useRouter } from 'vue-router'
 import { orderApi } from '../api/order'
 import CartItem from '../components/cart/CartItem.vue'
+import type { CreateOrderInput, PaymentMethod } from '../interfaces/order.interface'
 
 const cartStore = useCartStore()
 const authStore = useAuthStore()
@@ -14,6 +13,7 @@ const router = useRouter()
 
 const showCheckoutModal = ref(false)
 const shippingAddress = ref('')
+const paymentMethod = ref<PaymentMethod>('VNPAY') // Mặc định chọn VNPAY
 const loading = ref(false)
 const error = ref('')
 
@@ -33,9 +33,7 @@ const handleCheckout = () => {
     router.push('/login')
     return
   }
-  
   showCheckoutModal.value = true
-  // Lấy địa chỉ từ user nếu có
   shippingAddress.value = authStore.user?.address || ''
 }
 
@@ -49,31 +47,38 @@ const submitOrder = async () => {
   error.value = ''
 
   try {
-    const orderData = {
-      user_id: authStore.user!.id,
-      total_amount: cartStore.totalPrice,
-      status: 'pending',
+    // Khớp hoàn toàn với CreateOrderInput interface
+    const orderData: CreateOrderInput = {
       shipping_address: shippingAddress.value,
-      order_items: cartStore.items.map(item => ({
+      payment_method: paymentMethod.value,
+      items: cartStore.items.map(item => ({
         book_id: item.book.id,
-        quantity: item.quantity,
-        price: item.book.price
+        quantity: item.quantity
       }))
     }
 
     const response = await orderApi.create(orderData)
     
-    if (response.data) {
-      // Xóa giỏ hàng sau khi đặt hàng thành công
-      cartStore.clearCart()
-      
-      // Chuyển đến trang chi tiết đơn hàng hoặc trang thành công
-      alert('Đặt hàng thành công! Mã đơn hàng: #' + response.data.data.id)
+    // bóc tách dữ liệu từ ApiResponse<{ order_id, payment_url }>
+    const { order_id, payment_url } = response.data.data
+
+    // Xóa giỏ hàng khi thành công
+    cartStore.clearCart()
+    showCheckoutModal.value = false
+
+    // Logic điều hướng dựa trên phản hồi Backend
+    if (paymentMethod.value === 'BANK_TRANSFER') {
+      // Chuyển đến trang hiển thị QR nội bộ
+      router.push(`/checkout/bank-info/${order_id}`)
+    } else if (payment_url) {
+      // Chuyển hướng đến link VNPAY/Momo (URL ngoại sàn)
+      window.location.href = payment_url
+    } else {
+      alert('Đặt hàng thành công! Mã đơn hàng: #' + order_id)
       router.push('/')
     }
   } catch (err: any) {
-    error.value = err.response?.data?.error || 'Đặt hàng thất bại. Vui lòng thử lại.'
-    console.error('Lỗi đặt hàng:', err)
+    error.value = err.response?.data?.message || 'Đặt hàng thất bại. Vui lòng thử lại.'
   } finally {
     loading.value = false
   }
@@ -164,51 +169,63 @@ const closeModal = () => {
     </div>
 
     <!-- Checkout Modal -->
-    <div v-if="showCheckoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Thông tin giao hàng</h2>
+    <div v-if="showCheckoutModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-[2rem] shadow-2xl max-w-lg w-full p-8 max-h-[95vh] overflow-y-auto">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Xác nhận thanh toán</h2>
         
         <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Địa chỉ giao hàng <span class="text-red-500">*</span>
-          </label>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Địa chỉ giao hàng *</label>
           <textarea
             v-model="shippingAddress"
-            rows="4"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Nhập địa chỉ đầy đủ của bạn..."
+            rows="3"
+            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            placeholder="Số nhà, tên đường, phường/xã..."
           ></textarea>
         </div>
 
-        <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p class="text-red-600 text-sm">{{ error }}</p>
+        <div class="mb-6">
+          <label class="block text-sm font-bold text-gray-700 mb-3">Chọn phương thức thanh toán *</label>
+          <div class="grid grid-cols-1 gap-3">
+            <label :class="['flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all', paymentMethod === 'VNPAY' ? 'border-blue-600 bg-blue-50' : 'border-gray-100 hover:bg-gray-50']">
+              <input type="radio" value="VNPAY" v-model="paymentMethod" class="hidden" />
+              <img src="https://sandbox.vnpayment.vn/paymentv2/Images/brands/logo-vnpay.png" class="h-6 mr-3" alt="VNPAY" />
+              <span class="flex-1 font-bold text-gray-700 text-sm">Cổng thanh toán VNPAY</span>
+              <div class="w-5 h-5 border-2 rounded-full flex items-center justify-center" :class="paymentMethod === 'VNPAY' ? 'border-blue-600' : 'border-gray-300'">
+                <div v-if="paymentMethod === 'VNPAY'" class="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>
+              </div>
+            </label>
+
+            <label :class="['flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all', paymentMethod === 'BANK_TRANSFER' ? 'border-blue-600 bg-blue-50' : 'border-gray-100 hover:bg-gray-50']">
+              <input type="radio" value="BANK_TRANSFER" v-model="paymentMethod" class="hidden" />
+              <div class="w-6 h-6 bg-blue-100 rounded flex items-center justify-center mr-3 text-blue-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+              </div>
+              <span class="flex-1 font-bold text-gray-700 text-sm">Chuyển khoản VietQR</span>
+              <div class="w-5 h-5 border-2 rounded-full flex items-center justify-center" :class="paymentMethod === 'BANK_TRANSFER' ? 'border-blue-600' : 'border-gray-300'">
+                <div v-if="paymentMethod === 'BANK_TRANSFER'" class="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>
+              </div>
+            </label>
+          </div>
         </div>
 
-        <div class="bg-gray-50 rounded-lg p-4 mb-6">
-          <div class="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Tổng tiền hàng:</span>
-            <span class="font-semibold">{{ formatPrice(cartStore.totalPrice) }}đ</span>
-          </div>
-          <div class="flex justify-between text-lg font-bold text-gray-900">
-            <span>Tổng thanh toán:</span>
-            <span class="text-blue-600">{{ formatPrice(cartStore.totalPrice) }}đ</span>
+        <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-semibold">
+          {{ error }}
+        </div>
+
+        <div class="bg-gray-900 rounded-2xl p-5 mb-8 text-white shadow-xl">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400 font-medium">Tổng thanh toán:</span>
+            <span class="text-2xl font-black text-blue-400">{{ formatPrice(cartStore.totalPrice) }}đ</span>
           </div>
         </div>
 
-        <div class="flex gap-3">
-          <button
-            @click="closeModal"
-            :disabled="loading"
-            class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
+        <div class="flex gap-4">
+          <button @click="closeModal" :disabled="loading" class="flex-1 py-4 text-gray-500 font-bold hover:bg-gray-100 rounded-2xl transition-all">
             Hủy
           </button>
-          <button
-            @click="submitOrder"
-            :disabled="loading"
-            class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
-          >
-            {{ loading ? 'Đang xử lý...' : 'Đặt hàng' }}
+          <button @click="submitOrder" :disabled="loading" class="flex-1 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2">
+            <svg v-if="loading" class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            {{ loading ? 'Đang xử lý...' : 'Xác nhận đặt hàng' }}
           </button>
         </div>
       </div>

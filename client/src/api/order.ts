@@ -3,10 +3,11 @@ import type { Order, CreateOrderInput, UpdateOrderInput } from '../interfaces/or
 import type { ApiResponse } from '../interfaces/api.interface';
 
 export const orderApi = {
-  create: (data: CreateOrderInput) => api.post<ApiResponse<Order>>('/order/create', data),
+  create: (data: CreateOrderInput) => api.post<ApiResponse<{ order_id: number; payment_url?: string }>>('/order/create', data),
   getAll: () => api.get<ApiResponse<Order[]>>('/order/'),
   getById: (id: number) => api.get<ApiResponse<Order>>(`/order/${id}`),
   getByUser: (id: number) => api.get<ApiResponse<Order[]>>(`/order/user/${id}`),
   update: (id: number, data: UpdateOrderInput) => api.put<ApiResponse<Order>>(`/order/${id}`, data),
   delete: (id: number) => api.delete<ApiResponse<null>>(`/order/${id}`),
+  vnpayIpn: (data: any) => api.post<ApiResponse<any>>('/order/vnpay_ipn', data),
 };
