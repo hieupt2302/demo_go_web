@@ -66,12 +66,10 @@ router.beforeEach((to, from, next) => {
     return next({ name: 'login' })
   }
 
-  // Nếu đã đăng nhập mà cố tình vào lại trang login/register
   if (authStore.isAuthenticated && (to.name === 'login' || to.name === 'register')) {
     return next({ name: 'home' })
   }
 
-  // Kiểm tra quyền truy cập
   if (to.meta?.requiresAdmin && !authStore.isAdmin) {
     return next({ name: 'home' })
   }

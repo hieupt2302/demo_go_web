@@ -9,5 +9,5 @@ export const orderApi = {
   getByUser: (id: number) => api.get<ApiResponse<Order[]>>(`/order/user/${id}`),
   update: (id: number, data: UpdateOrderInput) => api.put<ApiResponse<Order>>(`/order/${id}`, data),
   delete: (id: number) => api.delete<ApiResponse<null>>(`/order/${id}`),
-  vnpayIpn: (data: any) => api.post<ApiResponse<any>>('/order/vnpay_ipn', data),
+  vnpay: (params: any) => api.get<ApiResponse<any>>('/vnpay_verify', { params }),
 };

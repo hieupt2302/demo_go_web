@@ -6,6 +6,7 @@ import (
 	"demowebgo/services"
 	"demowebgo/utlis"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -173,75 +174,87 @@ func DeleteOrder(c *gin.Context) {
 	utils.Success(c, http.StatusOK, nil, "Order deleted successfully")
 }
 
-func VNPAY_IPN(c *gin.Context) { // not complte the flow
-	// 1. Lấy thông tin từ VNPAY
+func VNPAY_Verify(c *gin.Context) {
+	// 1. Lấy thông tin từ Query Params do Frontend gửi lên
 	vnp_ResponseCode := c.Query("vnp_ResponseCode")
 	vnp_TransactionStatus := c.Query("vnp_TransactionStatus")
-	vnp_TxnRef := c.Query("vnp_TxnRef")         // OrderID
-	vnp_TransactionNo := c.Query("vnp_TransactionNo") // txn_id
+	vnp_TxnRef := c.Query("vnp_TxnRef")         
+	vnp_TransactionNo := c.Query("vnp_TransactionNo") 
+	vnp_Amount := c.Query("vnp_Amount")
 
-	// 2. Kiểm tra thanh toán thành công (Mã '00' cho cả Response và Status)
-	if vnp_ResponseCode == "00" && vnp_TransactionStatus == "00" {
-		
-		// Bắt đầu Transaction để đảm bảo tính nhất quán dữ liệu
-		tx := config.DB.Begin()
+	log.Println("vnp_ResponseCode", vnp_ResponseCode)
+	log.Println("vnp_TransactionStatus", vnp_TransactionStatus)
+	log.Println("vnp_TxnRef", vnp_TxnRef)
+	log.Println("vnp_TransactionNo", vnp_TransactionNo)
+	log.Println("vnp_Amount", vnp_Amount)
 
-		// A. Cập nhật trạng thái đơn hàng
-		var order models.Order
-		if err := tx.First(&order, vnp_TxnRef).Error; err != nil {
-			tx.Rollback()
-			c.JSON(200, gin.H{"RspCode": "01", "Message": "Order not found"})
-			return
-		}
-
-		// Kiểm tra nếu đơn hàng đã được xử lý trước đó (tránh xử lý trùng lặp)
-		if order.Status == "paid" {
-			tx.Rollback()
-			c.JSON(200, gin.H{"RspCode": "02", "Message": "Order already confirmed"})
-			return
-		}
-
-		// Cập nhật thông tin thanh toán
-		updateData := map[string]interface{}{
-			"Status":         "paid",
-			"PaymentStatus": "paid",
-			"TxnID":         vnp_TransactionNo,
-		}
-		if err := tx.Model(&order).Updates(updateData).Error; err != nil {
-			tx.Rollback()
-			c.JSON(200, gin.H{"RspCode": "99", "Message": "Update order failed"})
-			return
-		}
-
-		// B. Trừ tồn kho trong bảng Books
-		var orderItems []models.OrderItem
-		tx.Where("order_id = ?", order.ID).Find(&orderItems)
-
-		for _, item := range orderItems {
-			// Sử dụng câu lệnh Update với điều kiện để trừ kho an toàn (tránh số âm)
-			result := tx.Model(&models.Book{}).
-				Where("id = ? AND stock_quantity >= ?", item.BookID, item.Quantity).
-				Update("stock_quantity", gorm.Expr("stock_quantity - ?", item.Quantity))
-
-			if result.Error != nil {
-				tx.Rollback()
-				c.JSON(200, gin.H{"RspCode": "99", "Message": "Inventory update error"})
-				return
-			}
-
-			if result.RowsAffected == 0 {
-				// Nếu không có dòng nào bị ảnh hưởng -> Hết hàng
-				tx.Rollback()
-				c.JSON(200, gin.H{"RspCode": "99", "Message": "Out of stock for Book ID " + fmt.Sprint(item.BookID)})
-				return
-			}
-		}
-
-		// Commit tất cả thay đổi
-		tx.Commit()
+	// Dữ liệu trả về cho Frontend hiển thị
+	responseData := gin.H{
+		"order_id": vnp_TxnRef,
+		"amount":   vnp_Amount,
+		"txn_no":   vnp_TransactionNo,
 	}
 
-	// Trả về cho VNPAY
-	c.Redirect(http.StatusOK, "https://localhost:5173/success/" + vnp_TxnRef)
-}
+	// 2. Kiểm tra mã phản hồi thanh toán
+	if vnp_ResponseCode != "00" || vnp_TransactionStatus != "00" {
+		utils.Error(c, http.StatusBadRequest, "Giao dịch thất bại hoặc đã bị hủy")
+		return
+	}
 
+	// 3. Xử lý Database trong Transaction
+	tx := config.DB.Begin()
+
+	var order models.Order
+	if err := tx.First(&order, vnp_TxnRef).Error; err != nil {
+		tx.Rollback()
+		utils.Error(c, http.StatusNotFound, "Không tìm thấy đơn hàng trên hệ thống")
+		return
+	}
+
+	// Nếu đơn hàng đã được cập nhật 'paid' (tránh xử lý trùng lặp với IPN)
+	if order.Status == "shipped" {
+		tx.Rollback()
+		utils.Success(c, http.StatusOK, responseData, "Đơn hàng đã được xác nhận thanh toán trước đó")
+		return
+	}
+
+	// Cập nhật thông tin đơn hàng
+	updateData := map[string]interface{}{
+		"Status":         "shipped",
+		"PaymentStatus": "paid",
+		"TxnID":         vnp_TransactionNo,
+	}
+
+	if err := tx.Model(&order).Updates(updateData).Error; err != nil {
+		tx.Rollback()
+		utils.Error(c, http.StatusInternalServerError, "Lỗi cập nhật trạng thái đơn hàng")
+		return
+	}
+
+	// 4. Trừ tồn kho sách
+	var orderItems []models.OrderItem
+	tx.Where("order_id = ?", order.ID).Find(&orderItems)
+
+	for _, item := range orderItems {
+		result := tx.Model(&models.Book{}).
+			Where("id = ? AND stock_quantity >= ?", item.BookID, item.Quantity).
+			Update("stock_quantity", gorm.Expr("stock_quantity - ?", item.Quantity))
+
+		if result.Error != nil {
+			tx.Rollback()
+			utils.Error(c, http.StatusInternalServerError, "Lỗi hệ thống khi trừ kho")
+			return
+		}
+
+		if result.RowsAffected == 0 {
+			tx.Rollback()
+			utils.Error(c, http.StatusConflict, fmt.Sprintf("Sách ID %d đã hết hàng", item.BookID))
+			return
+		}
+	}
+
+	tx.Commit()
+
+	// 5. Trả về phản hồi thành công chuẩn ApiResponse
+	utils.Success(c, http.StatusOK, responseData, "Thanh toán và cập nhật đơn hàng thành công")
+}

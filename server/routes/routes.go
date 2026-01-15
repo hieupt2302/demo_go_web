@@ -21,5 +21,5 @@ func SetupRoutes(router *gin.Engine) {
 	handle_routes.CategoryRoutes(categoryRoute)
 	orderRoute := router.Group("/order", middlewares.AuthMiddleware())
 	handle_routes.OrderRoutes(orderRoute)
-	router.GET("/vnpay_ipn", controllers.VNPAY_IPN)
+	router.GET("/vnpay_verify", controllers.VNPAY_Verify)
 }

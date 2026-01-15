@@ -94,7 +94,23 @@ onMounted(async () => {
   // Ưu tiên lấy thông tin user trước để Header hiển thị đúng
   await fetchUserData()
   await fetchBooks()
+  const status = sessionStorage.getItem('payment_status')
+  const orderId = sessionStorage.getItem('payment_order_id')
+
+  if (status === 'success') {
+    // Hiện alert khi người dùng đã thực sự đứng ở trang chủ
+    alert(`Chúc mừng! Thanh toán thành công đơn hàng #${orderId}.`)
+    
+    // Quan trọng: Xóa trạng thái để alert không hiện lại khi F5 trang chủ
+    sessionStorage.removeItem('payment_status')
+    sessionStorage.removeItem('payment_order_id')
+  } else if (status === 'failed') {
+    alert("Thanh toán không thành công. Vui lòng kiểm tra lại đơn hàng.")
+    sessionStorage.removeItem('payment_status')
+  }
 })
+
+
 </script>
 
 <style scoped>
